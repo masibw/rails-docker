@@ -24,33 +24,24 @@ services:
       - "443:443"
     volumes:
       # Nginxの設定ファイルを上書きする
-      - ./build/nginx/conf/localhost.ssl.conf.erb:/var/lib/nginx-conf/localhost.conf.erb:ro
+      - ./build/nginx/conf/{DOMAIN_NAME}.ssl.conf.erb:/var/lib/nginx-conf/{DOMAIN_NAME}.conf.erb:ro
       # unix domain socket通信するのでRailsとディレクトリを共有する
       - tmp-data:/docker_rails/tmp
     environment:
-      STAGE: local
-      DOMAINS: 'localhost => https://localhost'
+      STAGE: production
+      DOMAINS: '{DOMAIN_NAME} => https://{DOMAIN_NAME}'
 
   app:
     build:
       context: ./
       dockerfile: ./build/rails/Dockerfile
-    command: bash -c "bundle exec rake assets:precompile && bundle exec pumactl start"
+    command: bundle exec pumactl start
     volumes:
       - .:/myapp
       # unix domain socket通信するのでNginxとディレクトリを共有する
       - tmp-data:/myapp/tmp
       # logを永続化
       - log-data:/myapp/log
-    # dockerizeを用いてdbが起動し終わるまで待つ
-    entrypoint:
-      - dockerize
-      - -timeout
-      - 60s
-      - -wait
-      - tcp://db:3306
-    ports:
-      - "3000:3000"
     depends_on:
       - db
     env_file:
