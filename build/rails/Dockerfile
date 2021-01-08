@@ -3,7 +3,7 @@ FROM node:14.15.3-alpine as node
 # 依存関係のインストールを行うだけのもの
 FROM ruby:2.6.0-alpine as builder
 RUN apk --update --no-cache add --virtual build-dependencies \
- shadow sudo busybox-suid mariadb-connector-c-dev tzdata alpine-sdk
+ shadow=4.5-r0 sudo=1.8.23-r4 busybox-suid=1.28.4-r3 mariadb-connector-c-dev=3.0.4-r1 tzdata=2020a-r0 alpine-sdk=1.0-r0
 
 WORKDIR /rails
 
@@ -16,13 +16,13 @@ RUN ln -s /usr/local/bin/node /usr/local/bin/nodejs && \
     ln -s /opt/yarn/bin/yarn /usr/local/bin/yarn
 
 # 依存しているライブラリのインストール
-ADD Gemfile Gemfile.lock ./
+COPY Gemfile Gemfile.lock ./
 ENV BUNDLE_JOBS=4
 RUN gem install bundler -v 2.1.4 \
   && bundle install --without development test
 
 #yarn install
-ADD package.json yarn.lock ./
+COPY package.json yarn.lock ./
 RUN yarn install
 
 # assets precompile
@@ -40,7 +40,7 @@ FROM ruby:2.6.0-alpine
 ENV DOCKERIZE_VERSION v0.6.1
 
 # パッケージ全体を軽量化して、railsが起動する最低限のものにする
-RUN apk --update --no-cache -q add shadow sudo busybox-suid execline tzdata mariadb-connector-c-dev libstdc++ && \
+RUN apk --update --no-cache -q add shadow=4.5-r0 sudo=1.8.23-r4 busybox-suid=1.28.4-r3 execline=2.5.0.0-r0 tzdata=2020a-r0 mariadb-connector-c-dev=3.0.4-r1 libstdc++=6.4.0-r9 && \
     cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 RUN mkdir /myapp
